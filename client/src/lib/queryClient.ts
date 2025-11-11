@@ -1,5 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Get the base URL from your Vercel Environment Variable
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -9,10 +12,11 @@ async function throwIfResNotOk(res: Response) {
 
 export async function apiRequest(
   method: string,
-  url: string,
+  url: string, // This will be the path, e.g., "/api/quiz/start"
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // --- FIX #1: Added API_BASE_URL ---
+  const res = await fetch(`${API_BASE_URL}${url}`, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -29,7 +33,13 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    // --- FIX #2: Added API_BASE_URL ---
+    // This joins the query key (e.g., ['api', 'quiz', 'history'])
+    // and adds it to the base server URL.
+    const path = queryKey.join("/");
+    const url = `${API_BASE_URL}/${path}`;
+
+    const res = await fetch(url, {
       credentials: "include",
     });
 
